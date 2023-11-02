@@ -1,0 +1,22 @@
+.App {
+  text-align: center;
+  margin: 40px;
+}
+.head{
+  background-color: #FAFAFB;
+}
+.box{
+  border-right: 1px solid #E0E0E0;
+}
+.small{
+  background-color: #565e5d;
+  color: white;
+  padding: 8px;
+  border-radius: 18px;
+}
+.btn{
+  background-color: #565e6d;
+  color: white;
+  font-weight: bold;
+  padding: 10px 20px;
+}
