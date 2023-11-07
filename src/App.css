@@ -1,20 +1,20 @@
 .App {
   text-align: center;
-  margin: 40px;
+  margin: 5px 20px;
 }
-.head{
-  background-color: #FAFAFB;
+.head {
+  background-color: #fafafb;
 }
-.box{
-  border-right: 1px solid #E0E0E0;
+.box {
+  border-right: 1px solid #e0e0e0;
 }
-.small{
+.small {
   background-color: #565e5d;
   color: white;
   padding: 8px;
   border-radius: 18px;
 }
-.btn{
+.btn {
   background-color: #565e6d;
   color: white;
   font-weight: bold;
