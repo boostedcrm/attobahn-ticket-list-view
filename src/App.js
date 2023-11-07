@@ -32,40 +32,46 @@ function App() {
     <div className="App">
     <Box sx={{display: "flex", justifyContent: "flex-end"}}>
      {
-      selectedArray.length > 0 && <Button variant="contained" className='btn' onClick={() => setDialogOpen(true)}>Edit</Button>
+      selectedArray.length > 0 && <Button variant="contained" className='btn' onClick={() => setDialogOpen(true)}>Update</Button>
      } 
     </Box>
-      <TableContainer component={Paper}>
+      <TableContainer component={Paper} sx={{width: "max-width"}}>
         <Table>
           <TableHead className='head'>
             <TableRow>
-              <TableCell className='box'></TableCell>
-              <TableCell className='box'>Ticket Number</TableCell>
+              <TableCell className='box' width={10}></TableCell>
+              <TableCell className='box' width={100}>Ticket Number</TableCell>
+              <TableCell className='box' width={300}>Subject</TableCell>
               <TableCell className='box'>Classification</TableCell>
+              <TableCell className='box'>Owner</TableCell>
               <TableCell className='box'>Priority</TableCell>
               <TableCell className='box'>Status</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
             <TableRow>
-              <TableCell className='box'><Checkbox {...label} onChange={(e) => {
+              <TableCell className='box'><Checkbox {...label}  width={10} onChange={(e) => {
                 if(selectedArray.length === 0){
                   setSelectedArray(["1"])
                 }else{
                   setSelectedArray([])
                 }
               }} /></TableCell>
-              <TableCell className='box'>#123</TableCell>
-              <TableCell className='box'>Content</TableCell>
+              <TableCell className='box' width={100}><a href="#">Ticket 123</a></TableCell>
+              <TableCell className='box' width={300}>Subject</TableCell>
+              <TableCell className='box'>Classification </TableCell>
+              <TableCell className='box'>David Lee</TableCell>
               <TableCell className='box'><span className="small">High</span></TableCell>
               <TableCell className='box'>
               Open
               </TableCell>
             </TableRow>
             <TableRow>
-              <TableCell className='box'><Checkbox {...label} /></TableCell>
-              <TableCell className='box'>#133</TableCell>
-              <TableCell className='box'>Content</TableCell>
+              <TableCell className='box' width={10}><Checkbox {...label} /></TableCell>
+              <TableCell className='box'  width={100}><a href="#">Ticket 123</a></TableCell>
+              <TableCell className='box' width={300}>Subject</TableCell>
+              <TableCell className='box'>Classification </TableCell>
+              <TableCell className='box'>Robert Lee</TableCell>
               <TableCell className='box'><span className="small">High</span></TableCell>
               <TableCell className='box'>
               Open
