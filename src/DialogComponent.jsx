@@ -9,6 +9,7 @@ import Slide from "@mui/material/Slide";
 import MenuItem from "@mui/material/MenuItem";
 import FormControl from "@mui/material/FormControl";
 import Select from "@mui/material/Select";
+import { Autocomplete, Box, TextField, Typography } from "@mui/material";
 
 const Transition = React.forwardRef(function Transition(props, ref) {
   return <Slide direction="up" ref={ref} {...props} />;
@@ -22,18 +23,11 @@ export default function DialogComponent({
   setToggle,
   toggle,
 }) {
+  const [loading, setLoading] = React.useState(false);
   const [status, setStatus] = React.useState("");
 
-  const handleChange = (event) => {
-    setStatus(event.target.value);
-  };
-
   const handleUpdate = async () => {
-    if (!status) {
-      return;
-    }
-    console.log(tickets);
-
+    setLoading(true);
     let func_name = "Zoho_desk_ticket_handle_from_milestones";
     let req_data = {
       update_tickets: true,
@@ -51,39 +45,61 @@ export default function DialogComponent({
           setToggle(!toggle);
           handleClose();
         }, 2000);
+      } else {
+        console.log("error");
       }
     });
   };
 
   return (
     <React.Fragment>
-      <DialogTitle>{"Change the status of the Tickets."}</DialogTitle>
+      <Box sx={{ width: 300 }}>
+        <Typography sx={{ fontSize: 20 }}>
+          Change the status of the Tickets
+        </Typography>
 
-      <DialogContent>
-        <FormControl sx={{ mt: 2 }} fullWidth>
-          <InputLabel id="demo-simple-select-label">Status</InputLabel>
-          <Select
-            labelId="demo-simple-select-label"
-            id="demo-simple-select"
+        <DialogContent>
+          <Autocomplete
+            id="status-autocomplete"
+            size="small"
+            options={["Open", "On Hold", "Escalated", "Closed"]}
+            fullWidth
+            sx={{ my: 1 }}
+            getOptionLabel={(option) => option}
             value={status}
-            label="Status"
-            onChange={handleChange}
+            onChange={(event, newValue) => {
+              setStatus(newValue);
+            }}
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                label="Status"
+                variant="outlined"
+                InputLabelProps={{ shrink: true }}
+              />
+            )}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button
+            sx={{ width: 110, mr: 1 }}
+            variant="outlined"
+            size="small"
+            onClick={handleClose}
           >
-            <MenuItem value={"Open"}>Open</MenuItem>
-            <MenuItem value={"On Hold"}>On Hold</MenuItem>
-            <MenuItem value={"Escalated"}>Escalated</MenuItem>
-            <MenuItem value={"Closed"}>Closed</MenuItem>
-          </Select>
-        </FormControl>
-      </DialogContent>
-      <DialogActions>
-        <Button variant="outlined" size="small" onClick={handleClose}>
-          Cancel
-        </Button>
-        <Button variant="contained" size="small" onClick={handleUpdate}>
-          Update
-        </Button>
-      </DialogActions>
+            Cancel
+          </Button>
+          <Button
+            sx={{ width: 110 }}
+            variant="contained"
+            size="small"
+            disabled={!status}
+            onClick={handleUpdate}
+          >
+            Update
+          </Button>
+        </DialogActions>
+      </Box>
     </React.Fragment>
   );
 }
