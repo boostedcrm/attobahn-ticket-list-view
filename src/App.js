@@ -18,6 +18,7 @@ import { useState } from "react";
 
 import Button from "@mui/material/Button";
 import DialogComponent from "./DialogComponent";
+import NotificationSelector from "./NotificationSelector";
 
 const style = {
   position: "absolute",
@@ -39,38 +40,63 @@ function App() {
   const [zohoInitialized, setZohoInitialized] = useState();
   const [loading, setLoading] = useState(true);
   const [entityId, setEntityId] = useState();
-
+  const [userList, setUserList] = useState();
   const [toggle, setToggle] = useState(false);
-
   const [selectedArray, setSelectedArray] = useState([]);
   const [ticketList, setTicketList] = useState([]);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      let func_name = "Zoho_desk_ticket_handle_from_milestones";
-      let req_data = {
-        get_tickets: true,
-        milestone_id: entityId,
-      };
-      await ZOHO.CRM.FUNCTIONS.execute(func_name, req_data).then(
-        async function (result) {
-          // console.log(result);
-          let resp = JSON.parse(result?.details?.output);
-          setTicketList(resp?.list || []);
-          setLoading(false);
-        }
-      );
-    };
-    if (entityId) {
-      fetchData();
-    }
-  }, [entityId]);
+  const [openModal, setOpenModal] = useState(false);
+  const handleOpenModal = () => setOpenModal(true);
+  const handleCloseModal = () => {
+    setOpenModal(false);
+  };
+  const [openModalNotification, setOpenModalNotification] = useState(false);
+  const handleOpenModalNotification = () => setOpenModalNotification(true);
+  const handleCloseModalNotification = () => {
+    setOpenModalNotification(false);
+  };
+
+  // useEffect(() => {
+  //   const fetchData = async () => {
+  //     let func_name = "Zoho_desk_ticket_handle_from_milestones";
+  //     let req_data = {
+  //       get_tickets: true,
+  //       milestone_id: entityId,
+  //     };
+  //     await ZOHO.CRM.FUNCTIONS.execute(func_name, req_data).then(
+  //       async function (result) {
+  //         // console.log(result);
+  //         let resp = JSON.parse(result?.details?.output);
+  //         setTicketList(resp?.list || []);
+  //         setLoading(false);
+  //       }
+  //     );
+  //   };
+  //   if (entityId) {
+  //     fetchData();
+  //   }
+  // }, [entityId]);
 
   useEffect(() => {
     ZOHO.embeddedApp.on("PageLoad", async function (data) {
       setLoading(true);
       // console.log(data);
       setEntityId(data?.EntityId);
+      await ZOHO.CRM.API.getAllUsers({ Type: "AllUsers" }).then(function (
+        data
+      ) {
+        const users = data?.users;
+        const activeUserList = users?.filter(
+          (user) => user?.status === "active"
+        );
+        let user_array = [
+          { title: "Customer/Vendor Contact Name", email: "vendor@gmail.com" },
+        ];
+        activeUserList?.forEach((element) => {
+          user_array.push({ title: element?.full_name, email: element?.email });
+        });
+        setUserList(user_array);
+      });
     });
 
     ZOHO.embeddedApp.init().then(() => {
@@ -90,21 +116,32 @@ function App() {
       await ZOHO.CRM.FUNCTIONS.execute(func_name, req_data).then(
         async function (result) {
           // console.log(result);
-          let resp = JSON.parse(result?.details?.output);
-          setTicketList(resp?.list || []);
+          let resp = JSON.parse(
+            result?.details?.output ? result?.details?.output : ""
+          );
+          // console.log(resp?.list);
+          let sortedList = resp?.list?.sort((a, b) => {
+            if (a.status === "Open" && b.status !== "Open") {
+              return -1; // 'Open' comes first
+            } else if (a.status !== "Open" && b.status === "Open") {
+              return 1; // 'Open' comes first
+            } else if (a.status === "Closed" && b.status !== "Closed") {
+              return 1; // 'Closed' comes last
+            } else if (a.status !== "Closed" && b.status === "Closed") {
+              return -1; // 'Closed' comes last
+            } else {
+              return 0; // Maintain original order for other statuses
+            }
+          });
+          setTicketList(sortedList);
           setLoading(false);
         }
       );
     };
 
-    fetchUpdateData();
-  }, [toggle]);
+    if (entityId) fetchUpdateData();
+  }, [entityId, toggle]);
 
-  const [openModal, setOpenModal] = useState(false);
-  const handleOpenModal = () => setOpenModal(true);
-  const handleCloseModal = () => {
-    setOpenModal(false);
-  };
   return (
     <div className="App">
       {loading ? (
@@ -126,9 +163,9 @@ function App() {
                 size="small"
                 variant="contained"
                 sx={{ width: 180, mr: 1.3 }}
-                // onClick={handleOpenModal}
+                onClick={handleOpenModalNotification}
               >
-                Send Notice
+                Send Notification
               </Button>
               <Button
                 size="small"
@@ -140,71 +177,76 @@ function App() {
               </Button>
             </Box>
           )}
-
+          {/* {JSON.stringify(userList)} */}
           {ticketList?.length > 0 ? (
-            <TableContainer component={Paper} sx={{ width: "max-width" }}>
-              <Table>
+            <TableContainer sx={{ mt: 2, boxShadow: 0 }} component={Paper}>
+              <Table
+                sx={{ minWidth: 650 }}
+                size="small"
+                aria-label="simple table"
+              >
                 <TableHead className="head">
-                  <TableRow>
-                    <TableCell className="box" width={10}></TableCell>
-                    <TableCell className="box" width={100}>
+                  <TableRow sx={{ bgcolor: "#a4aaab" }}>
+                    <TableCell align="left" width={10}></TableCell>
+                    <TableCell align="left" width={90}>
+                      Status
+                    </TableCell>
+                    <TableCell align="left" width={100}>
                       Ticket Number
                     </TableCell>
-                    <TableCell className="box" width={300}>
+                    <TableCell align="left" width={300}>
                       Subject
                     </TableCell>
-                    <TableCell className="box" width={110}>
+                    <TableCell align="left" width={110}>
                       Classification
                     </TableCell>
-                    <TableCell className="box" width={150}>
+                    <TableCell align="left" width={150}>
                       Owner
                     </TableCell>
-                    <TableCell className="box" width={70}>
+                    <TableCell align="left" width={70}>
                       Priority
-                    </TableCell>
-                    <TableCell className="box" width={90}>
-                      Status
                     </TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
                   {ticketList?.map((item, index) => (
                     <TableRow>
-                      <TableCell sx={{ p: "0 4px" }} className="box">
+                      <TableCell>
                         <Checkbox
                           {...label}
                           width={10}
+                          checked={selectedArray?.includes(item?.id)}
                           onChange={(event) => {
                             if (event.target.checked) {
-                              setSelectedArray([...selectedArray, item.id]);
+                              setSelectedArray([...selectedArray, item?.id]);
                             } else {
                               setSelectedArray(
-                                selectedArray?.filter((el) => item.id !== el)
+                                selectedArray?.filter((el) => item?.id != el)
                               );
                             }
                           }}
                         />
                       </TableCell>
-                      <TableCell sx={{ p: "0 4px" }} className="box">
+                      <TableCell align="left">{item?.status}</TableCell>
+                      <TableCell align="left">
                         <a href={item?.webUrl} target="_blank">
-                          {item.ticketNumber}
+                          {item?.ticketNumber}
                         </a>
                       </TableCell>
-                      <TableCell sx={{ p: "0 4px" }} className="box">
-                        {item.subject}
+                      <TableCell align="left">{item?.subject}</TableCell>
+                      <TableCell align="left">{item?.classification}</TableCell>
+                      <TableCell align="left">
+                        {`${
+                          item?.assignee?.firstName
+                            ? item?.assignee?.firstName
+                            : ""
+                        } ${
+                          item?.assignee?.lastName
+                            ? item?.assignee?.lastName
+                            : ""
+                        }`}
                       </TableCell>
-                      <TableCell sx={{ p: "0 4px" }} className="box">
-                        {item.classification}
-                      </TableCell>
-                      <TableCell sx={{ p: "0 4px" }} className="box">
-                        {/* {item.ticketNumber} */}
-                      </TableCell>
-                      <TableCell sx={{ p: "0 4px" }} className="box">
-                        <span className="small">{item.priority}</span>
-                      </TableCell>
-                      <TableCell sx={{ p: "0 4px" }} className="box">
-                        {item.status}
-                      </TableCell>
+                      <TableCell align="left">{item?.priority}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -229,8 +271,26 @@ function App() {
               <DialogComponent
                 handleClose={handleCloseModal}
                 tickets={selectedArray}
+                setSelectedArray={setSelectedArray}
                 setToggle={setToggle}
                 toggle={toggle}
+              />
+            </Box>
+          </Modal>
+
+          <Modal
+            open={openModalNotification}
+            onClose={handleCloseModalNotification}
+            aria-labelledby="modal-modal-title"
+            aria-describedby="modal-modal-description"
+          >
+            <Box sx={style}>
+              <NotificationSelector
+                handleClose={handleCloseModalNotification}
+                userList={userList}
+                tickets={selectedArray}
+                ticketList={ticketList}
+                setSelectedArray={setSelectedArray}
               />
             </Box>
           </Modal>

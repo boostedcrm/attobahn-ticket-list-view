@@ -1,25 +1,22 @@
 import * as React from "react";
 import Button from "@mui/material/Button";
-import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
-import InputLabel from "@mui/material/InputLabel";
-import DialogTitle from "@mui/material/DialogTitle";
-import Slide from "@mui/material/Slide";
-import MenuItem from "@mui/material/MenuItem";
-import FormControl from "@mui/material/FormControl";
-import Select from "@mui/material/Select";
-import { Autocomplete, Box, TextField, Typography } from "@mui/material";
 
-const Transition = React.forwardRef(function Transition(props, ref) {
-  return <Slide direction="up" ref={ref} {...props} />;
-});
+import {
+  Autocomplete,
+  Box,
+  CircularProgress,
+  TextField,
+  Typography,
+} from "@mui/material";
 
 const ZOHO = window.ZOHO;
 
-export default function DialogComponent({
+export default function NotificationSelector({
   handleClose,
   tickets,
+  setSelectedArray,
   setToggle,
   toggle,
 }) {
@@ -39,11 +36,13 @@ export default function DialogComponent({
     ) {
       // console.log(result);
       let resp = JSON.parse(result?.details?.output);
-      console.log(resp);
+      // console.log(resp);
       if (resp?.status === "success") {
         setTimeout(() => {
+          setSelectedArray([]);
           setToggle(!toggle);
           handleClose();
+          setLoading(false);
         }, 2000);
       } else {
         console.log("error");
@@ -58,7 +57,7 @@ export default function DialogComponent({
           Change the status of the Tickets
         </Typography>
 
-        <DialogContent>
+        <DialogContent sx={{ px: 1 }}>
           <Autocomplete
             id="status-autocomplete"
             size="small"
@@ -82,7 +81,7 @@ export default function DialogComponent({
         </DialogContent>
         <DialogActions>
           <Button
-            sx={{ width: 110, mr: 1 }}
+            sx={{ width: 95, mr: 1 }}
             variant="outlined"
             size="small"
             onClick={handleClose}
@@ -90,13 +89,13 @@ export default function DialogComponent({
             Cancel
           </Button>
           <Button
-            sx={{ width: 110 }}
+            sx={{ width: 95 }}
             variant="contained"
             size="small"
-            disabled={!status}
+            disabled={!status || loading}
             onClick={handleUpdate}
           >
-            Update
+            {loading ? <CircularProgress size={21} /> : "Update"}
           </Button>
         </DialogActions>
       </Box>
