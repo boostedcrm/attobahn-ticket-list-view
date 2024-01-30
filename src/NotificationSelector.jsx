@@ -3,7 +3,14 @@ import Button from "@mui/material/Button";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 
-import { Autocomplete, Box, CircularProgress, TextField } from "@mui/material";
+import {
+  Autocomplete,
+  Box,
+  Checkbox,
+  CircularProgress,
+  FormControlLabel,
+  TextField,
+} from "@mui/material";
 
 const ZOHO = window.ZOHO;
 
@@ -13,16 +20,23 @@ export default function NotificationSelector({
   tickets,
   ticketList,
   setSelectedArray,
+  vendor,
 }) {
   const [loading, setLoading] = React.useState(false);
-  const [selectedPerson, setSelectedPerson] = React.useState([userList[0]]);
+  const [selectedPerson, setSelectedPerson] = React.useState([]);
+
+  const [vendorChecked, setVendorChecked] = React.useState(true);
+
+  const handleChange = (event) => {
+    setVendorChecked(event.target.checked);
+  };
 
   const handleSendNotification = async () => {
-    let findVendor = selectedPerson?.find(
-      (item) => item.email === "vendor@gmail.com"
-    );
+    // let findVendor = selectedPerson?.find(
+    //   (item) => item.email === "vendor@gmail.com"
+    // );
     let ticket_id_email = [];
-    if (findVendor) {
+    if (vendorChecked) {
       ticketList.forEach((element) => {
         if (tickets.includes(element.id)) {
           ticket_id_email.push({
@@ -45,47 +59,52 @@ export default function NotificationSelector({
         }
       });
     }
-    let withoutVendorEmail = selectedPerson?.filter(
-      (item) => item.email !== "vendor@gmail.com"
-    );
+    // let withoutVendorEmail = selectedPerson?.filter(
+    //   (item) => item.email !== "vendor@gmail.com"
+    // );
     let func_name = "Zoho_desk_ticket_handle_from_milestones";
     let req_data = {
       send_notification: true,
       tickets: JSON.stringify(ticket_id_email),
       emails: JSON.stringify(
-        withoutVendorEmail?.length > 0
-          ? withoutVendorEmail?.map((item) => item?.email)
+        selectedPerson?.length > 0
+          ? selectedPerson?.map((item) => item?.email)
           : []
       ),
     };
-
     setLoading(true);
     await ZOHO.CRM.FUNCTIONS.execute(func_name, req_data).then(async function (
       result
     ) {
-      setSelectedArray([]);
-      setLoading(false);
-      setSelectedPerson([]);
-      handleClose();
-
-      //   let resp = JSON.parse(result?.details?.output);
-      //   // console.log(resp);
-      //   if (resp?.status === "success") {
-      //     setTimeout(() => {
-      //       setSelectedArray([]);
-      //       handleClose();
-      //       setLoading(false);
-      //     }, 2000);
-      //   } else {
-      //     console.log("error");
-      //   }
+      let resp = JSON.parse(result?.details?.output);
+      if (resp?.status === "success") {
+        setTimeout(() => {
+          setSelectedArray([]);
+          handleClose();
+          setLoading(false);
+        }, 2000);
+      } else {
+        setLoading(false);
+        console.log("error");
+      }
     });
   };
 
   return (
     <React.Fragment>
       <Box sx={{ width: 500 }}>
-        {/* {JSON.stringify(selectedPerson)} */}
+        <FormControlLabel
+          control={
+            <Checkbox
+              sx={{ ml: 1 }}
+              checked={vendorChecked}
+              onChange={handleChange}
+              inputProps={{ "aria-label": "controlled" }}
+            />
+          }
+          label={`${vendor?.Contact_Name}	${vendor?.Contact_Last_Name}`}
+        />
+
         <DialogContent sx={{ px: 1 }}>
           <Autocomplete
             multiple
@@ -93,7 +112,7 @@ export default function NotificationSelector({
             // limitTags={3}
             options={userList}
             getOptionLabel={(option) => option?.title}
-            defaultValue={[userList[0]]}
+            value={selectedPerson}
             onChange={(event, newValue) => {
               setSelectedPerson(newValue);
             }}
@@ -126,6 +145,8 @@ export default function NotificationSelector({
             {loading ? <CircularProgress size={21} /> : "Send"}
           </Button>
         </DialogActions>
+        {/* {JSON.stringify(vendorChecked)}
+        {JSON.stringify(selectedPerson)} */}
       </Box>
     </React.Fragment>
   );
