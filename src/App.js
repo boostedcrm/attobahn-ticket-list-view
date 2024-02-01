@@ -13,6 +13,8 @@ import {
   Modal,
   Typography,
   CircularProgress,
+  Snackbar,
+  Alert,
 } from "@mui/material";
 import { useState } from "react";
 
@@ -55,6 +57,17 @@ function App() {
   const handleOpenModalNotification = () => setOpenModalNotification(true);
   const handleCloseModalNotification = () => {
     setOpenModalNotification(false);
+  };
+
+  const [openSnackbar, setOpenSnackbar] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState("");
+  const [severity, setSeverity] = useState("error");
+
+  const handleCloseSnackbar = (event, reason) => {
+    if (reason === "clickaway") {
+      return;
+    }
+    setOpenSnackbar(false);
   };
 
   useEffect(() => {
@@ -180,7 +193,10 @@ function App() {
           )}
           {/* {JSON.stringify(userList)} */}
           {ticketList?.length > 0 ? (
-            <TableContainer sx={{ mt: 2, boxShadow: 0 }} component={Paper}>
+            <TableContainer
+              sx={{ mt: 2, boxShadow: 0, height: 400 }}
+              component={Paper}
+            >
               <Table
                 sx={{ minWidth: 650 }}
                 size="small"
@@ -275,6 +291,9 @@ function App() {
                 setSelectedArray={setSelectedArray}
                 setToggle={setToggle}
                 toggle={toggle}
+                setOpenSnackbar={setOpenSnackbar}
+                setSeverity={setSeverity}
+                setSnackbarMessage={setSnackbarMessage}
               />
             </Box>
           </Modal>
@@ -293,11 +312,27 @@ function App() {
                 ticketList={ticketList}
                 setSelectedArray={setSelectedArray}
                 vendor={vendor}
+                setOpenSnackbar={setOpenSnackbar}
+                setSeverity={setSeverity}
+                setSnackbarMessage={setSnackbarMessage}
               />
             </Box>
           </Modal>
         </>
       )}
+      <Snackbar
+        open={openSnackbar}
+        autoHideDuration={3800}
+        onClose={handleCloseSnackbar}
+      >
+        <Alert
+          onClose={handleCloseSnackbar}
+          severity={severity}
+          sx={{ width: "100%" }}
+        >
+          {snackbarMessage}
+        </Alert>
+      </Snackbar>
     </div>
   );
 }

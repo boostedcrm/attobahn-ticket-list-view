@@ -19,6 +19,9 @@ export default function NotificationSelector({
   setSelectedArray,
   setToggle,
   toggle,
+  setOpenSnackbar,
+  setSeverity,
+  setSnackbarMessage,
 }) {
   const [loading, setLoading] = React.useState(false);
   const [status, setStatus] = React.useState("");
@@ -43,9 +46,15 @@ export default function NotificationSelector({
           setToggle(!toggle);
           handleClose();
           setLoading(false);
+          setSeverity("success");
+          setSnackbarMessage("Status updated successfully");
+          setOpenSnackbar(true);
         }, 2000);
       } else {
         console.log("error");
+        setSeverity("error");
+        setSnackbarMessage("Something went wrong..!");
+        setOpenSnackbar(true);
       }
     });
   };

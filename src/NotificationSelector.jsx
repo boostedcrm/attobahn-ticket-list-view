@@ -21,6 +21,9 @@ export default function NotificationSelector({
   ticketList,
   setSelectedArray,
   vendor,
+  setOpenSnackbar,
+  setSeverity,
+  setSnackbarMessage,
 }) {
   const [loading, setLoading] = React.useState(false);
   const [selectedPerson, setSelectedPerson] = React.useState([]);
@@ -82,10 +85,15 @@ export default function NotificationSelector({
           setSelectedArray([]);
           handleClose();
           setLoading(false);
+          setSeverity("success");
+          setSnackbarMessage("Notification sent successfully");
+          setOpenSnackbar(true);
         }, 2000);
       } else {
         setLoading(false);
-        console.log("error");
+        setSeverity("error");
+        setSnackbarMessage("Something went wrong..!");
+        setOpenSnackbar(true);
       }
     });
   };
