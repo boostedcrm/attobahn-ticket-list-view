@@ -110,7 +110,7 @@ export default function NotificationSelector({
               inputProps={{ "aria-label": "controlled" }}
             />
           }
-          label={`${vendor?.Contact_Name}	${vendor?.Contact_Last_Name}`}
+          label="Vendor Ticket Contact"
         />
 
         <DialogContent sx={{ px: 1 }}>
