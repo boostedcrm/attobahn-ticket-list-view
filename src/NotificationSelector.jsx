@@ -128,7 +128,7 @@ export default function NotificationSelector({
             renderInput={(params) => (
               <TextField
                 {...params}
-                label="Send To"
+                label="Send To Active Users"
                 InputLabelProps={{ shrink: true }}
               />
             )}
