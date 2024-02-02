@@ -46,7 +46,7 @@ function App() {
   const [toggle, setToggle] = useState(false);
   const [selectedArray, setSelectedArray] = useState([]);
   const [ticketList, setTicketList] = useState([]);
-  const [vendor, setVendor] = useState(null);
+  // const [vendor, setVendor] = useState(null);
 
   const [openModal, setOpenModal] = useState(false);
   const handleOpenModal = () => setOpenModal(true);
@@ -75,29 +75,29 @@ function App() {
       setLoading(true);
       // console.log(data);
       setEntityId(data?.EntityId);
-      await ZOHO.CRM.API.getRecord({
-        Entity: data.Entity,
-        RecordID: data?.EntityId,
-      }).then(async function (data) {
-        let result = data?.data?.[0];
-        if (result?.Project_Assignment?.id) {
-          await ZOHO.CRM.API.getRecord({
-            Entity: "Project_Assignment",
-            RecordID: result?.Project_Assignment?.id,
-          }).then(async function (output) {
-            let pa_resp = output?.data?.[0];
-            if (pa_resp?.Vendor?.id) {
-              await ZOHO.CRM.API.getRecord({
-                Entity: "Vendors",
-                RecordID: pa_resp?.Vendor?.id,
-              }).then(async function (vendorOutput) {
-                let vendor_resp = vendorOutput?.data?.[0];
-                setVendor(vendor_resp);
-              });
-            }
-          });
-        }
-      });
+      // await ZOHO.CRM.API.getRecord({
+      //   Entity: data.Entity,
+      //   RecordID: data?.EntityId,
+      // }).then(async function (data) {
+      //   let result = data?.data?.[0];
+      //   if (result?.Project_Assignment?.id) {
+      //     await ZOHO.CRM.API.getRecord({
+      //       Entity: "Project_Assignment",
+      //       RecordID: result?.Project_Assignment?.id,
+      //     }).then(async function (output) {
+      //       let pa_resp = output?.data?.[0];
+      //       if (pa_resp?.Vendor?.id) {
+      //         await ZOHO.CRM.API.getRecord({
+      //           Entity: "Vendors",
+      //           RecordID: pa_resp?.Vendor?.id,
+      //         }).then(async function (vendorOutput) {
+      //           let vendor_resp = vendorOutput?.data?.[0];
+      //           setVendor(vendor_resp);
+      //         });
+      //       }
+      //     });
+      //   }
+      // });
       await ZOHO.CRM.API.getAllUsers({ Type: "AllUsers" }).then(function (
         data
       ) {
@@ -311,7 +311,7 @@ function App() {
                 tickets={selectedArray}
                 ticketList={ticketList}
                 setSelectedArray={setSelectedArray}
-                vendor={vendor}
+                // vendor={vendor}
                 setOpenSnackbar={setOpenSnackbar}
                 setSeverity={setSeverity}
                 setSnackbarMessage={setSnackbarMessage}

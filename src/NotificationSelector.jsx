@@ -20,7 +20,6 @@ export default function NotificationSelector({
   tickets,
   ticketList,
   setSelectedArray,
-  vendor,
   setOpenSnackbar,
   setSeverity,
   setSnackbarMessage,
@@ -46,6 +45,7 @@ export default function NotificationSelector({
             id: element.id,
             subject: element?.subject,
             ticketNumber: element?.ticketNumber,
+            description: element?.description,
             email: element?.email || null,
           });
         }
@@ -57,6 +57,7 @@ export default function NotificationSelector({
             id: element.id,
             subject: element?.subject,
             ticketNumber: element?.ticketNumber,
+            description: element?.description,
             email: null,
           });
         }
