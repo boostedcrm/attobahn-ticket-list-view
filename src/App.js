@@ -41,22 +41,18 @@ function App() {
 
   const [zohoInitialized, setZohoInitialized] = useState();
   const [loading, setLoading] = useState(true);
+  const [entity, setEntity] = useState();
   const [entityId, setEntityId] = useState();
-  const [userList, setUserList] = useState();
+  const [recordResp, setRecordResp] = useState();
   const [toggle, setToggle] = useState(false);
-  const [selectedArray, setSelectedArray] = useState([]);
+  const [milestoneConfirmation, setMilestoneConfirmation] = useState([]);
+  const [deliverablesConfirmation, setDeliverablesConfirmation] = useState([]);
   const [ticketList, setTicketList] = useState([]);
-  // const [vendor, setVendor] = useState(null);
 
   const [openModal, setOpenModal] = useState(false);
   const handleOpenModal = () => setOpenModal(true);
   const handleCloseModal = () => {
     setOpenModal(false);
-  };
-  const [openModalNotification, setOpenModalNotification] = useState(false);
-  const handleOpenModalNotification = () => setOpenModalNotification(true);
-  const handleCloseModalNotification = () => {
-    setOpenModalNotification(false);
   };
 
   const [openSnackbar, setOpenSnackbar] = useState(false);
@@ -72,45 +68,8 @@ function App() {
 
   useEffect(() => {
     ZOHO.embeddedApp.on("PageLoad", async function (data) {
-      setLoading(true);
-      // console.log(data);
+      setEntity(data?.Entity);
       setEntityId(data?.EntityId);
-      // await ZOHO.CRM.API.getRecord({
-      //   Entity: data.Entity,
-      //   RecordID: data?.EntityId,
-      // }).then(async function (data) {
-      //   let result = data?.data?.[0];
-      //   if (result?.Project_Assignment?.id) {
-      //     await ZOHO.CRM.API.getRecord({
-      //       Entity: "Project_Assignment",
-      //       RecordID: result?.Project_Assignment?.id,
-      //     }).then(async function (output) {
-      //       let pa_resp = output?.data?.[0];
-      //       if (pa_resp?.Vendor?.id) {
-      //         await ZOHO.CRM.API.getRecord({
-      //           Entity: "Vendors",
-      //           RecordID: pa_resp?.Vendor?.id,
-      //         }).then(async function (vendorOutput) {
-      //           let vendor_resp = vendorOutput?.data?.[0];
-      //           setVendor(vendor_resp);
-      //         });
-      //       }
-      //     });
-      //   }
-      // });
-      await ZOHO.CRM.API.getAllUsers({ Type: "AllUsers" }).then(function (
-        data
-      ) {
-        const users = data?.users;
-        const activeUserList = users?.filter(
-          (user) => user?.status === "active"
-        );
-        let user_array = [];
-        activeUserList?.forEach((element) => {
-          user_array.push({ title: element?.full_name, email: element?.email });
-        });
-        setUserList(user_array);
-      });
     });
 
     ZOHO.embeddedApp.init().then(() => {
@@ -119,42 +78,94 @@ function App() {
   }, []);
 
   useEffect(() => {
-    const fetchUpdateData = async () => {
+    const getUpdateData = async () => {
       setLoading(true);
-      // console.log(data);
-      let func_name = "Zoho_desk_ticket_handle_from_milestones";
-      let req_data = {
-        get_tickets: true,
-        milestone_id: entityId,
-      };
-      await ZOHO.CRM.FUNCTIONS.execute(func_name, req_data).then(
-        async function (result) {
-          // console.log(result);
-          let resp = JSON.parse(
-            result?.details?.output ? result?.details?.output : ""
-          );
-          // console.log(resp?.list);
-          let sortedList = resp?.list?.sort((a, b) => {
-            if (a.status === "Open" && b.status !== "Open") {
-              return -1; // 'Open' comes first
-            } else if (a.status !== "Open" && b.status === "Open") {
-              return 1; // 'Open' comes first
-            } else if (a.status === "Closed" && b.status !== "Closed") {
-              return 1; // 'Closed' comes last
-            } else if (a.status !== "Closed" && b.status === "Closed") {
-              return -1; // 'Closed' comes last
-            } else {
-              return 0; // Maintain original order for other statuses
-            }
-          });
-          setTicketList(sortedList);
+      await ZOHO.CRM.API.getRecord({
+        Entity: entity,
+        RecordID: entityId,
+      }).then(async function (data) {
+        let result = data?.data[0];
+        setRecordResp(result);
+        if (result?.Milestone_Type === "Deliverables") {
+          setDeliverablesConfirmation(result?.Deliverables_List);
           setLoading(false);
         }
-      );
+        if (result?.Milestone_Type === "Milestone") {
+          let totalTickets = [];
+          let milestoneConfirmationList = result?.Milestone_Confirmation;
+          let finalConfirmationList = [];
+          if (milestoneConfirmationList?.length > 0) {
+            let func_name = "Zoho_desk_ticket_handle_from_milestones";
+            let req_data = {
+              get_tickets: true,
+              milestone_id: entityId,
+            };
+            await ZOHO.CRM.FUNCTIONS.execute(func_name, req_data).then(
+              async function (result) {
+                let resp = JSON.parse(
+                  result?.details?.output ? result?.details?.output : ""
+                );
+                totalTickets = resp?.list;
+              }
+            );
+            if (totalTickets?.length > 0) {
+              milestoneConfirmationList?.forEach((element) => {
+                let allTikets = [];
+                if (element?.Tickets && element?.Tickets.trim() !== "") {
+                  allTikets = element?.Tickets.split(", ");
+                }
+                if (allTikets?.length > 0) {
+                  let openTicketsCount = 0;
+                  let recentClosedTime = null;
+
+                  for (let i = 0; i < totalTickets?.length; i++) {
+                    let ticket = totalTickets[i];
+                    let ticketNo = "" + ticket.ticketNumber;
+                    if (allTikets.includes(ticketNo)) {
+                      if (ticket.status !== "Closed") {
+                        openTicketsCount++;
+                      } else {
+                        if (
+                          recentClosedTime === null ||
+                          ticket.closedTime > recentClosedTime
+                        ) {
+                          recentClosedTime = ticket.closedTime;
+                        }
+                      }
+                    }
+                  }
+                  element.openTickets = openTicketsCount;
+                  element.closedTime = recentClosedTime;
+                  finalConfirmationList.push(element);
+                } else {
+                  finalConfirmationList.push(element);
+                }
+              });
+              setMilestoneConfirmation(finalConfirmationList);
+              setLoading(false);
+            } else {
+              setMilestoneConfirmation(finalConfirmationList);
+              setLoading(false);
+            }
+          } else {
+            setMilestoneConfirmation(finalConfirmationList);
+            setLoading(false);
+          }
+        }
+      });
     };
 
-    if (entityId) fetchUpdateData();
-  }, [entityId, toggle]);
+    if (entity && entityId) getUpdateData();
+  }, [entity, entityId, toggle]);
+
+  const isLink = (text) => {
+    // Regular expression to match common URL patterns
+    var urlPattern =
+      /^(https?:\/\/)?([\da-z.-]+)\.([a-z.]{2,6})([/\w.-]*)*\/?$/;
+
+    // Test if the text matches the URL pattern
+    return urlPattern.test(text);
+  };
 
   return (
     <div className="App">
@@ -165,140 +176,130 @@ function App() {
         </Box>
       ) : (
         <>
-          {selectedArray?.length > 0 && (
-            <Box
-              sx={{
-                display: "flex",
-                justifyContent: "flex-end",
-                my: 2,
-              }}
-            >
-              <Button
-                size="small"
-                variant="contained"
-                sx={{ width: 180, mr: 1.3 }}
-                onClick={handleOpenModalNotification}
+          {recordResp?.Milestone_Type === "Deliverables" ? (
+            deliverablesConfirmation?.length > 0 ? (
+              <TableContainer
+                sx={{ mt: 2, boxShadow: 0, height: 400 }}
+                component={Paper}
               >
-                Send Notification
-              </Button>
-              <Button
-                size="small"
-                variant="contained"
-                sx={{ width: 180 }}
-                onClick={handleOpenModal}
-              >
-                Update Ticket
-              </Button>
-            </Box>
-          )}
-          {/* {JSON.stringify(userList)} */}
-          {ticketList?.length > 0 ? (
-            <TableContainer
-              sx={{ mt: 2, boxShadow: 0, height: 400 }}
-              component={Paper}
-            >
-              <Table
-                sx={{ minWidth: 650 }}
-                size="small"
-                aria-label="simple table"
-              >
-                <TableHead className="head">
-                  <TableRow sx={{ bgcolor: "#a4aaab" }}>
-                    <TableCell align="left" width={10}></TableCell>
-                    <TableCell align="left" width={90}>
-                      Status
-                    </TableCell>
-                    <TableCell align="left" width={100}>
-                      Ticket Number
-                    </TableCell>
-                    <TableCell align="left" width={300}>
-                      Subject
-                    </TableCell>
-                    <TableCell align="left" width={110}>
-                      Classification
-                    </TableCell>
-                    <TableCell align="left" width={150}>
-                      Owner
-                    </TableCell>
-                    <TableCell align="left" width={70}>
-                      Priority
-                    </TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {ticketList?.map((item, index) => (
-                    <TableRow>
-                      <TableCell>
-                        <Checkbox
-                          {...label}
-                          width={10}
-                          checked={selectedArray?.includes(item?.id)}
-                          onChange={(event) => {
-                            if (event.target.checked) {
-                              setSelectedArray([...selectedArray, item?.id]);
-                            } else {
-                              setSelectedArray(
-                                selectedArray?.filter((el) => item?.id != el)
-                              );
-                            }
-                          }}
-                        />
+                <Table
+                  sx={{ minWidth: 650 }}
+                  size="small"
+                  aria-label="simple table"
+                >
+                  <TableHead className="head">
+                    <TableRow sx={{ bgcolor: "#a4aaab" }}>
+                      <TableCell align="left" width={50}>
+                        Category
                       </TableCell>
-                      <TableCell align="left">{item?.status}</TableCell>
-                      <TableCell align="left">
-                        <a href={item?.webUrl} target="_blank">
-                          {item?.ticketNumber}
-                        </a>
+                      <TableCell align="left" width={400}>
+                        Description
                       </TableCell>
-                      <TableCell align="left">{item?.subject}</TableCell>
-                      <TableCell align="left">{item?.classification}</TableCell>
-                      <TableCell align="left">
-                        {`${
-                          item?.assignee?.firstName
-                            ? item?.assignee?.firstName
-                            : ""
-                        } ${
-                          item?.assignee?.lastName
-                            ? item?.assignee?.lastName
-                            : ""
-                        }`}
+                      <TableCell align="left" width={250}>
+                        Location
                       </TableCell>
-                      <TableCell align="left">{item?.priority}</TableCell>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </TableContainer>
+                  </TableHead>
+                  <TableBody>
+                    {deliverablesConfirmation?.map((item, index) => (
+                      <TableRow>
+                        <TableCell align="left">{item?.Category}</TableCell>
+                        <TableCell align="left">{item?.Description}</TableCell>
+                        <TableCell align="left">
+                          {isLink(item?.Location) ? (
+                            <a href={item?.Location} target="_blank">
+                              {item?.Location}
+                            </a>
+                          ) : (
+                            item?.Location
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            ) : (
+              <Box sx={{ display: "flex", justifyContent: "center", mt: 20 }}>
+                <Typography variant="h5" sx={{ fontWeight: "bold" }}>
+                  {" "}
+                  No Confirmation available for this milestone.{" "}
+                </Typography>
+              </Box>
+            )
           ) : (
-            <Box sx={{ display: "flex", justifyContent: "center", mt: 20 }}>
-              <Typography variant="h5" sx={{ fontWeight: "bold" }}>
-                {" "}
-                No ticket available for this milestone.{" "}
-              </Typography>
-            </Box>
+            <></>
           )}
 
-          <Modal
-            open={openModal}
-            onClose={handleCloseModal}
-            aria-labelledby="modal-modal-title"
-            aria-describedby="modal-modal-description"
-          >
-            <Box sx={style}>
-              <DialogComponent
-                handleClose={handleCloseModal}
-                tickets={selectedArray}
-                setSelectedArray={setSelectedArray}
-                setToggle={setToggle}
-                toggle={toggle}
-                setOpenSnackbar={setOpenSnackbar}
-                setSeverity={setSeverity}
-                setSnackbarMessage={setSnackbarMessage}
-              />
-            </Box>
-          </Modal>
+          {recordResp?.Milestone_Type === "Milestone" ? (
+            milestoneConfirmation?.length > 0 ? (
+              <TableContainer
+                sx={{ mt: 2, boxShadow: 0, height: 400 }}
+                component={Paper}
+              >
+                <Table
+                  sx={{ minWidth: 650 }}
+                  size="small"
+                  aria-label="simple table"
+                >
+                  <TableHead className="head">
+                    <TableRow sx={{ bgcolor: "#a4aaab" }}>
+                      <TableCell align="left" width={50}>
+                        Confirmation Time
+                      </TableCell>
+                      <TableCell align="left" width={400}>
+                        Description
+                      </TableCell>
+                      <TableCell align="left" width={100}>
+                        All Tickets
+                      </TableCell>
+                      <TableCell align="left" width={40}>
+                        Open Tickets
+                      </TableCell>
+                      <TableCell align="left" width={100}>
+                        Status
+                      </TableCell>
+                      <TableCell align="left" width={50}>
+                        Completed Time
+                      </TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {milestoneConfirmation?.map((item, index) => (
+                      <TableRow>
+                        <TableCell align="left">
+                          {item?.Confirmation_Date_Time}
+                        </TableCell>
+                        <TableCell align="left">
+                          <pre>{item?.Description}</pre>
+                        </TableCell>
+                        <TableCell align="left">{item?.Tickets}</TableCell>
+                        <TableCell align="left">{item?.openTickets}</TableCell>
+                        <TableCell align="left">
+                          {item?.openTickets === 0 && "Complete"}
+                          {item?.openTickets > 0 && "Accepted w/Punchlist"}
+                        </TableCell>
+                        <TableCell align="left">
+                          {item?.openTickets === 0 && item?.closedTime}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            ) : (
+              <Box sx={{ display: "flex", justifyContent: "center", mt: 20 }}>
+                <Typography variant="h5" sx={{ fontWeight: "bold" }}>
+                  {" "}
+                  No Confirmation available for this milestone.{" "}
+                </Typography>
+              </Box>
+            )
+          ) : (
+            <></>
+          )}
 
-          <Modal
+          {/* <Modal
             open={openModalNotification}
             onClose={handleCloseModalNotification}
             aria-labelledby="modal-modal-title"
@@ -317,7 +318,7 @@ function App() {
                 setSnackbarMessage={setSnackbarMessage}
               />
             </Box>
-          </Modal>
+          </Modal> */}
         </>
       )}
       <Snackbar
