@@ -6,9 +6,9 @@ import TableCell from "@mui/material/TableCell";
 import TableContainer from "@mui/material/TableContainer";
 import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
+import HighlightOffIcon from "@mui/icons-material/HighlightOff";
 import Paper from "@mui/material/Paper";
 import {
-  Checkbox,
   Box,
   Modal,
   Typography,
@@ -18,9 +18,7 @@ import {
 } from "@mui/material";
 import { useState } from "react";
 
-import Button from "@mui/material/Button";
-import DialogComponent from "./DialogComponent";
-import NotificationSelector from "./NotificationSelector";
+import RemoveModal from "./RemoveModal";
 import dayjs from "dayjs";
 
 const style = {
@@ -38,21 +36,25 @@ const style = {
 const ZOHO = window.ZOHO;
 
 function App() {
-  const label = { inputProps: { "aria-label": "Checkbox demo" } };
-
   const [zohoInitialized, setZohoInitialized] = useState();
   const [loading, setLoading] = useState(true);
   const [entity, setEntity] = useState();
   const [entityId, setEntityId] = useState();
   const [recordResp, setRecordResp] = useState();
+  const [deskTickets, setDeskTickets] = useState([]);
   const [toggle, setToggle] = useState(false);
   const [milestoneConfirmation, setMilestoneConfirmation] = useState([]);
   const [deliverablesConfirmation, setDeliverablesConfirmation] = useState([]);
-  const [ticketList, setTicketList] = useState([]);
+  const [selectedRowId, setSelectedRowId] = useState();
+  const [deleteLoading, setDeleteLoading] = useState();
 
   const [openModal, setOpenModal] = useState(false);
-  const handleOpenModal = () => setOpenModal(true);
+  const handleOpenModal = (rowId) => {
+    setSelectedRowId(rowId);
+    setOpenModal(true);
+  };
   const handleCloseModal = () => {
+    setSelectedRowId();
     setOpenModal(false);
   };
 
@@ -107,6 +109,7 @@ function App() {
                   result?.details?.output ? result?.details?.output : ""
                 );
                 totalTickets = resp?.list;
+                setDeskTickets(totalTickets);
               }
             );
             if (totalTickets?.length > 0) {
@@ -158,6 +161,71 @@ function App() {
 
     if (entity && entityId) getUpdateData();
   }, [entity, entityId, toggle]);
+
+  const handleRemoveRow = () => {
+    let findDeleteRow = milestoneConfirmation?.find(
+      (item) => item?.id === selectedRowId
+    );
+    if (findDeleteRow) {
+      let relatedTicketNumber = [];
+      if (findDeleteRow?.Tickets && findDeleteRow?.Tickets.trim() !== "") {
+        relatedTicketNumber = findDeleteRow?.Tickets.split(", ");
+      }
+      let previousTickets = recordResp?.Ticket_Ids
+        ? JSON.parse(recordResp?.Ticket_Ids)
+        : [];
+
+      const relatedIds = relatedTicketNumber
+        .map((ticketNumber) => {
+          const match = deskTickets?.find(
+            (ticket) => ticket.ticketNumber === ticketNumber
+          );
+          return match ? match.id : null;
+        })
+        .filter(Boolean);
+      let updated_Ticket_Ids = [];
+      updated_Ticket_Ids = previousTickets?.filter(
+        (id) => !relatedIds.includes(id)
+      );
+
+      const updated_milestone_confirmation = milestoneConfirmation?.filter(
+        (item) => item?.id !== selectedRowId
+      );
+      setDeleteLoading(true);
+      try {
+        var config = {
+          Entity: entity,
+          APIData: {
+            id: entityId,
+            Milestone_Confirmation: updated_milestone_confirmation,
+            Ticket_Ids: JSON.stringify(updated_Ticket_Ids),
+          },
+          Trigger: ["workflow", "blueprint"],
+        };
+        ZOHO.CRM.API.updateRecord(config).then(async function (res) {
+          // console.log({ data });
+          if (res?.data[0]?.message === "record updated") {
+            setSnackbarMessage("Deleted Successfully");
+            setSeverity("success");
+            setOpenSnackbar(true);
+            setDeleteLoading(false);
+            handleCloseModal();
+            setToggle(!toggle);
+          } else {
+            setDeleteLoading(false);
+            setSnackbarMessage("Error....Please try later");
+            setSeverity("error");
+            setOpenSnackbar(true);
+          }
+        });
+      } catch (error) {
+        setLoading(false);
+        setSnackbarMessage(error?.message);
+        setSeverity("error");
+        setOpenSnackbar(true);
+      }
+    }
+  };
 
   const isLink = (text) => {
     // Regular expression to match common URL patterns
@@ -263,6 +331,7 @@ function App() {
                       <TableCell align="left" width={50}>
                         Completed Time
                       </TableCell>
+                      <TableCell align="left" width={10}></TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
@@ -294,6 +363,25 @@ function App() {
                           {item?.openTickets === 0 &&
                             dayjs(item?.closedTime).format("MM-DD-YYYY HH:mm")}
                         </TableCell>
+                        <TableCell
+                          align="center"
+                          sx={{
+                            verticalAlign: "top",
+                            width: 10,
+                            pl: 0,
+                            pr: 0.5,
+                          }}
+                        >
+                          <HighlightOffIcon
+                            onClick={() => handleOpenModal(item?.id)}
+                            sx={{
+                              "&:hover": {
+                                cursor: "pointer",
+                              },
+                              color: "#ed2f4f",
+                            }}
+                          />
+                        </TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -311,26 +399,20 @@ function App() {
             <></>
           )}
 
-          {/* <Modal
-            open={openModalNotification}
-            onClose={handleCloseModalNotification}
+          <Modal
+            open={openModal}
+            onClose={handleCloseModal}
             aria-labelledby="modal-modal-title"
             aria-describedby="modal-modal-description"
           >
             <Box sx={style}>
-              <NotificationSelector
-                handleClose={handleCloseModalNotification}
-                userList={userList}
-                tickets={selectedArray}
-                ticketList={ticketList}
-                setSelectedArray={setSelectedArray}
-                // vendor={vendor}
-                setOpenSnackbar={setOpenSnackbar}
-                setSeverity={setSeverity}
-                setSnackbarMessage={setSnackbarMessage}
+              <RemoveModal
+                handleClose={handleCloseModal}
+                handleRemoveRow={handleRemoveRow}
+                deleteLoading={deleteLoading}
               />
             </Box>
-          </Modal> */}
+          </Modal>
         </>
       )}
       <Snackbar
