@@ -21,6 +21,7 @@ import { useState } from "react";
 import Button from "@mui/material/Button";
 import DialogComponent from "./DialogComponent";
 import NotificationSelector from "./NotificationSelector";
+import dayjs from "dayjs";
 
 const style = {
   position: "absolute",
@@ -265,22 +266,33 @@ function App() {
                     </TableRow>
                   </TableHead>
                   <TableBody>
+                    {/* {JSON.stringify(milestoneConfirmation)} */}
                     {milestoneConfirmation?.map((item, index) => (
                       <TableRow>
-                        <TableCell align="left">
-                          {item?.Confirmation_Date_Time}
+                        <TableCell sx={{ verticalAlign: "top" }} align="left">
+                          {dayjs(item?.Confirmation_Date_Time).format(
+                            "MM-DD-YYYY HH:mm"
+                          )}
                         </TableCell>
-                        <TableCell align="left">
-                          <pre>{item?.Description}</pre>
+                        <TableCell
+                          sx={{ verticalAlign: "top", whiteSpace: "pre-line" }}
+                          align="left"
+                        >
+                          {item?.Description}
                         </TableCell>
-                        <TableCell align="left">{item?.Tickets}</TableCell>
-                        <TableCell align="left">{item?.openTickets}</TableCell>
-                        <TableCell align="left">
+                        <TableCell sx={{ verticalAlign: "top" }} align="left">
+                          {item?.Tickets}
+                        </TableCell>
+                        <TableCell sx={{ verticalAlign: "top" }} align="left">
+                          {item?.openTickets}
+                        </TableCell>
+                        <TableCell sx={{ verticalAlign: "top" }} align="left">
                           {item?.openTickets === 0 && "Complete"}
                           {item?.openTickets > 0 && "Accepted w/Punchlist"}
                         </TableCell>
-                        <TableCell align="left">
-                          {item?.openTickets === 0 && item?.closedTime}
+                        <TableCell sx={{ verticalAlign: "top" }} align="left">
+                          {item?.openTickets === 0 &&
+                            dayjs(item?.closedTime).format("MM-DD-YYYY HH:mm")}
                         </TableCell>
                       </TableRow>
                     ))}
