@@ -70,7 +70,7 @@ export default function NotificationSelector({
           <Autocomplete
             id="status-autocomplete"
             size="small"
-            options={["Open", "In Progress", "Escalated", "Closed"]}
+            options={["Open", "In Progress", "On Hold", "Escalated", "Closed"]}
             fullWidth
             sx={{ my: 1 }}
             getOptionLabel={(option) => option}
