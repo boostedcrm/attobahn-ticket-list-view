@@ -134,19 +134,31 @@ function App() {
             result?.details?.output ? result?.details?.output : ""
           );
           // console.log(resp?.list);
-          let sortedList = resp?.list?.sort((a, b) => {
-            if (a.status === "Open" && b.status !== "Open") {
-              return -1; // 'Open' comes first
-            } else if (a.status !== "Open" && b.status === "Open") {
-              return 1; // 'Open' comes first
-            } else if (a.status === "Closed" && b.status !== "Closed") {
-              return 1; // 'Closed' comes last
-            } else if (a.status !== "Closed" && b.status === "Closed") {
-              return -1; // 'Closed' comes last
-            } else {
-              return 0; // Maintain original order for other statuses
-            }
-          });
+          const statusHierarchy = {
+            "In Progress": 0,
+            Open: 1,
+            Escalated: 2,
+            "On Hold": 3,
+            Closed: 4,
+          };
+
+          let sortedList = resp?.list?.sort(
+            (a, b) => statusHierarchy[a.status] - statusHierarchy[b.status]
+          );
+
+          // let sortedList = resp?.list?.sort((a, b) => {
+          //   if (a.status === "Open" && b.status !== "Open") {
+          //     return -1; // 'Open' comes first
+          //   } else if (a.status !== "Open" && b.status === "Open") {
+          //     return 1; // 'Open' comes first
+          //   } else if (a.status === "Closed" && b.status !== "Closed") {
+          //     return 1; // 'Closed' comes last
+          //   } else if (a.status !== "Closed" && b.status === "Closed") {
+          //     return -1; // 'Closed' comes last
+          //   } else {
+          //     return 0; // Maintain original order for other statuses
+          //   }
+          // });
           setTicketList(sortedList);
           setLoading(false);
         }
