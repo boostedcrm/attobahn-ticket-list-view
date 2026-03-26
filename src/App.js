@@ -98,19 +98,22 @@ function App() {
       //     });
       //   }
       // });
-      await ZOHO.CRM.API.getAllUsers({ Type: "AllUsers" }).then(function (
-        data
-      ) {
-        const users = data?.users;
-        const activeUserList = users?.filter(
-          (user) => user?.status === "active"
-        );
-        let user_array = [];
-        activeUserList?.forEach((element) => {
-          user_array.push({ title: element?.full_name, email: element?.email });
-        });
-        setUserList(user_array);
-      });
+      await ZOHO.CRM.API.getAllUsers({ Type: "AllUsers" }).then(
+        function (data) {
+          const users = data?.users;
+          const activeUserList = users?.filter(
+            (user) => user?.status === "active",
+          );
+          let user_array = [];
+          activeUserList?.forEach((element) => {
+            user_array.push({
+              title: element?.full_name,
+              email: element?.email,
+            });
+          });
+          setUserList(user_array);
+        },
+      );
     });
 
     ZOHO.embeddedApp.init().then(() => {
@@ -131,7 +134,7 @@ function App() {
         async function (result) {
           // console.log(result);
           let resp = JSON.parse(
-            result?.details?.output ? result?.details?.output : ""
+            result?.details?.output ? result?.details?.output : "",
           );
           // console.log(resp?.list);
           const statusHierarchy = {
@@ -143,7 +146,7 @@ function App() {
           };
 
           let sortedList = resp?.list?.sort(
-            (a, b) => statusHierarchy[a.status] - statusHierarchy[b.status]
+            (a, b) => statusHierarchy[a.status] - statusHierarchy[b.status],
           );
 
           // let sortedList = resp?.list?.sort((a, b) => {
@@ -161,7 +164,7 @@ function App() {
           // });
           setTicketList(sortedList);
           setLoading(false);
-        }
+        },
       );
     };
 
@@ -250,7 +253,7 @@ function App() {
                               setSelectedArray([...selectedArray, item?.id]);
                             } else {
                               setSelectedArray(
-                                selectedArray?.filter((el) => item?.id != el)
+                                selectedArray?.filter((el) => item?.id != el),
                               );
                             }
                           }}
@@ -285,7 +288,7 @@ function App() {
             <Box sx={{ display: "flex", justifyContent: "center", mt: 20 }}>
               <Typography variant="h5" sx={{ fontWeight: "bold" }}>
                 {" "}
-                No ticket available for this milestone.{" "}
+                No ticket available for this milestone...{" "}
               </Typography>
             </Box>
           )}
