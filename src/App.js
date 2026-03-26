@@ -288,7 +288,7 @@ function App() {
             <Box sx={{ display: "flex", justifyContent: "center", mt: 20 }}>
               <Typography variant="h5" sx={{ fontWeight: "bold" }}>
                 {" "}
-                No ticket available for this milestone...!!!{" "}
+                No ticket available for this milestone.{" "}
               </Typography>
             </Box>
           )}
